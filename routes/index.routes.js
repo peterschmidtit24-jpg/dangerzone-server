@@ -4,7 +4,14 @@ const router = require("express").Router();
 const authRouter = require("./auth.routes")
 router.use("/auth", authRouter)
 
+const incidentRouter = require("./incident.routes")
+router.use("/", incidentRouter)
 
+const commentRouter = require("./comment.routes")
+router.use("/", commentRouter)
+
+const userRouter = require("./user.routes")
+router.use("/", userRouter)
 
 //* EXAMPLE of how a route can be made private by checking the token
 

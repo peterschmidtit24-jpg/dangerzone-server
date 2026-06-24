@@ -1,0 +1,43 @@
+[
+  {
+    "_id": { "$oid": "667b00000000000000000201" },
+    "incidentType": "pothole",
+    "location": "Mainstreet 23, Munich",
+    "severity": "medium",
+    "probableDuration": "days",
+    "description": "Large pothole in the right lane near the bus stop.",
+    "active": true,
+    "comments": [
+      { "$oid": "667b00000000000000000101" }
+    ],
+    "createdAt": { "$date": "2026-06-24T11:00:00.000Z" },
+    "updatedAt": { "$date": "2026-06-24T11:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "667b00000000000000000202" },
+    "incidentType": "accident",
+    "location": "Leopoldstrasse 44, Munich",
+    "severity": "high",
+    "probableDuration": "hours",
+    "description": "Two cars involved in an accident. One lane is blocked.",
+    "active": true,
+    "comments": [
+      { "$oid": "667b00000000000000000102" },
+      { "$oid": "667b00000000000000000103" }
+    ],
+    "createdAt": { "$date": "2026-06-24T11:20:00.000Z" },
+    "updatedAt": { "$date": "2026-06-24T11:20:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "667b00000000000000000203" },
+    "incidentType": "litter",
+    "location": "Gartnerplatz 7, Munich",
+    "severity": "low",
+    "probableDuration": "days",
+    "description": "Several trash bags were left next to the public bench.",
+    "active": false,
+    "comments": [],
+    "createdAt": { "$date": "2026-06-24T11:40:00.000Z" },
+    "updatedAt": { "$date": "2026-06-24T11:40:00.000Z" }
+  }
+]
