@@ -4,7 +4,7 @@ const { Schema, model } = require("mongoose")
 /*
     Schema (Comment)
     user: Object Ref (link to the posting user)
-    comments: Strings  // contain all comments made by the user X
+    comment: String  // comment made by the user
     flag: enum ["normal", "suspicious", "toxic"]
 */
 
@@ -15,8 +15,9 @@ const commentSchema = new Schema(
             ref: "User",
             required: true
         },
-        comments: {
-            type: [String],
+        comment: {
+            type: String,
+            trim: true,
             required: true
         },
         flag: {

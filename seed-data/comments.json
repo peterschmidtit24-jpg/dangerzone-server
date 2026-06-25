@@ -2,10 +2,7 @@
   {
     "_id": { "$oid": "667b00000000000000000101" },
     "user": { "$oid": "667b00000000000000000001" },
-    "comments": [
-      "The pothole is still there.",
-      "It is hard to see at night."
-    ],
+    "comment": "The pothole is still there. It is hard to see at night.",
     "flag": "normal",
     "createdAt": { "$date": "2026-06-24T10:00:00.000Z" },
     "updatedAt": { "$date": "2026-06-24T10:00:00.000Z" }
@@ -13,9 +10,7 @@
   {
     "_id": { "$oid": "667b00000000000000000102" },
     "user": { "$oid": "667b00000000000000000002" },
-    "comments": [
-      "Traffic is blocked near the crossing."
-    ],
+    "comment": "Traffic is blocked near the crossing.",
     "flag": "normal",
     "createdAt": { "$date": "2026-06-24T10:15:00.000Z" },
     "updatedAt": { "$date": "2026-06-24T10:15:00.000Z" }
@@ -23,9 +18,7 @@
   {
     "_id": { "$oid": "667b00000000000000000103" },
     "user": { "$oid": "667b00000000000000000003" },
-    "comments": [
-      "This report should be checked by an admin."
-    ],
+    "comment": "This report should be checked by an admin.",
     "flag": "suspicious",
     "createdAt": { "$date": "2026-06-24T10:30:00.000Z" },
     "updatedAt": { "$date": "2026-06-24T10:30:00.000Z" }
