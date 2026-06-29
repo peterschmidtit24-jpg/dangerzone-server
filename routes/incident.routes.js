@@ -10,7 +10,13 @@ router.get("/all-incidents", async (req, res, next) => {
     const incidents = await Incident
       .find()
       .populate("createdBy", "username email role")
-      .populate("comments");
+      .populate({
+        path: "comments",
+        populate: {
+          path: "user",
+          select: "username email role"
+        }
+      });
       
     res.status(200).json(incidents);
   } catch (error) {
@@ -23,7 +29,13 @@ router.get("/incident/:incidentId", async (req, res, next) => {
     const incident = await Incident
       .findById(req.params.incidentId)
       .populate("createdBy", "username email role")
-      .populate("comments");
+      .populate({
+        path: "comments",
+        populate: {
+          path: "user",
+          select: "username email role"
+        }
+      });
 
     if (!incident) {
       res.status(404).json({ errorMessage: "Incident not found" });
@@ -77,6 +89,20 @@ router.put("/incident/:incidentId", verifyToken, async (req, res, next) => {
       active
     } = req.body;
 
+    const foundIncident = await Incident.findById(incidentId);
+
+    if (!foundIncident) {
+      res.status(404).json({ errorMessage: "Incident not found" });
+      return;
+    }
+
+    const isOwner = foundIncident.createdBy.toString() === req.payload._id;
+
+    if (!isOwner) {
+      res.status(403).json({ errorMessage: "You cannot edit this incident" });
+      return;
+    }
+
     const updatedIncident = await Incident
       .findByIdAndUpdate(
         incidentId,
@@ -92,12 +118,13 @@ router.put("/incident/:incidentId", verifyToken, async (req, res, next) => {
       )
       // shows also the affected comments to the client
       .populate("createdBy", "username email role")
-      .populate("comments");
-
-    if (!updatedIncident) {
-      res.status(404).json({ errorMessage: "Incident not found" });
-      return;
-    }
+      .populate({
+        path: "comments",
+        populate: {
+          path: "user",
+          select: "username email role"
+        }
+      });
 
     res.status(200).json(updatedIncident);
   } catch (error) {
@@ -109,12 +136,21 @@ router.delete("/incident/:incidentId", verifyToken, async (req, res, next) => {
   try {
     const { incidentId } = req.params;
 
-    const deletedIncident = await Incident.findByIdAndDelete(incidentId);
+    const foundIncident = await Incident.findById(incidentId);
 
-    if (!deletedIncident) {
+    if (!foundIncident) {
       res.status(404).json({ errorMessage: "Incident not found" });
       return;
     }
+
+    const isOwner = foundIncident.createdBy.toString() === req.payload._id;
+
+    if (!isOwner) {
+      res.status(403).json({ errorMessage: "You cannot delete this incident" });
+      return;
+    }
+
+    const deletedIncident = await Incident.findByIdAndDelete(incidentId);
 
     // delete all the comments related to the incident too
     await Comment.deleteMany({ _id: { $in: deletedIncident.comments } });

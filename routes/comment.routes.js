@@ -70,6 +70,7 @@ router.post("/comment/incident/:incidentId", verifyToken, async (req, res, next)
                 { $push: { comments: newComment._id } },
                 { new: true }
             )
+            .populate("createdBy", "username email role")
             .populate({
                 path: "comments",
                 populate: {

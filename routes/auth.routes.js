@@ -89,6 +89,7 @@ router.post("/login", async(req, res, next) => {
     const payload = {
       _id: foundUser._id,
       email: foundUser.email,
+      username: foundUser.username,
       //! if we had roles, they need to be here as part of the payload of the token
       role: foundUser.role
     }
@@ -105,8 +106,19 @@ router.post("/login", async(req, res, next) => {
 })
 
 // GET "/api/auth/verify" => validating the user token on subsequent visits
-router.get("/verify", verifyToken, (req, res) => {
-  res.status(200).json(req.payload)
+router.get("/verify", verifyToken, async (req, res, next) => {
+  try {
+    const currentUser = await User.findById(req.payload._id).select("username email role")
+
+    if (!currentUser) {
+      res.status(404).json({ errorMessage: "User not found" })
+      return
+    }
+
+    res.status(200).json(currentUser)
+  } catch (error) {
+    next(error)
+  }
 })
 
 module.exports = router;
