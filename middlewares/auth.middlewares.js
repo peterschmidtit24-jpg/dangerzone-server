@@ -1,13 +1,26 @@
 const jwt = require("jsonwebtoken")
+const User = require("../models/User.model")
 
-function verifyToken(req, res, next) {
-
-  console.log(req.headers)
+async function verifyToken(req, res, next) {
 
   try {
-    const authToken = req.headers.authorization.split(" ")[1]
+    const authHeader = req.headers.authorization || ""
+    const authToken = authHeader.split(" ")[1]
     const payload = jwt.verify(authToken, process.env.TOKEN_SECRET)
-    req.payload = payload // we are passing the info from this user (token owner) to the route
+    const currentUser = await User.findById(payload._id).select("username email role")
+
+    if (!currentUser) {
+      res.status(401).json({errorMessage: "Token user no longer exists"})
+      return
+    }
+
+    req.payload = {
+      ...payload,
+      _id: currentUser._id.toString(),
+      email: currentUser.email,
+      username: currentUser.username,
+      role: currentUser.role
+    } // we are passing the current info from this user (token owner) to the route
     next() //move the request to the next route. Meaning, the token is valid!
   } catch (error) {
     // the token is invalid:

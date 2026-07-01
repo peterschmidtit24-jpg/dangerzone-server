@@ -53,6 +53,8 @@ router.post("/incident", verifyToken, async (req, res, next) => {
     const {
       incidentType,
       location,
+      lat,
+      lng,
       severity,
       probableDuration,
       description,
@@ -62,6 +64,8 @@ router.post("/incident", verifyToken, async (req, res, next) => {
     const newIncident = await Incident.create({
       incidentType,
       location,
+      lat,
+      lng,
       severity,
       probableDuration,
       description,
@@ -83,6 +87,8 @@ router.put("/incident/:incidentId", verifyToken, async (req, res, next) => {
     const {
       incidentType,
       location,
+      lat,
+      lng,
       severity,
       probableDuration,
       description,
@@ -97,8 +103,9 @@ router.put("/incident/:incidentId", verifyToken, async (req, res, next) => {
     }
 
     const isOwner = foundIncident.createdBy.toString() === req.payload._id;
+    const isAdmin = req.payload.role === "admin";
 
-    if (!isOwner) {
+    if (!isOwner && !isAdmin) {
       res.status(403).json({ errorMessage: "You cannot edit this incident" });
       return;
     }
@@ -109,6 +116,8 @@ router.put("/incident/:incidentId", verifyToken, async (req, res, next) => {
         {
           incidentType,
           location,
+          lat,
+          lng,
           severity,
           probableDuration,
           description,
@@ -144,8 +153,9 @@ router.delete("/incident/:incidentId", verifyToken, async (req, res, next) => {
     }
 
     const isOwner = foundIncident.createdBy.toString() === req.payload._id;
+    const isAdmin = req.payload.role === "admin";
 
-    if (!isOwner) {
+    if (!isOwner && !isAdmin) {
       res.status(403).json({ errorMessage: "You cannot delete this incident" });
       return;
     }

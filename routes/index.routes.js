@@ -13,6 +13,9 @@ router.use("/", commentRouter)
 const userRouter = require("./user.routes")
 router.use("/", userRouter)
 
+const geocodeRouter = require("./geocode.routes")
+router.use("/", geocodeRouter)
+
 //* EXAMPLE of how a route can be made private by checking the token
 
 const { verifyToken, verifyAdmin } = require("../middlewares/auth.middlewares");

@@ -12,6 +12,8 @@ const incidentSchema = new Schema(
             type: String,
             required: true
         },
+        lat: Number,
+        lng: Number,
         severity: {
             type: String,
             enum: ["low", "medium", "high"],
