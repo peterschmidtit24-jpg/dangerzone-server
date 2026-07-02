@@ -2,12 +2,12 @@ const router = require("express").Router()
 const User = require("../models/User.model")
 const Comment = require("../models/Comment.model")
 const Incident = require("../models/Incident.model")
-const { verifyToken } = require("../middlewares/auth.middlewares")
+const { verifyToken, verifyAdmin } = require("../middlewares/auth.middlewares")
 
 
 router.get("/all-users", async (req, res, next) => {
     try {
-        const users = await User.find()
+        const users = await User.find().select("-password")
         
         res.status(200).json(users)
     } catch (error) {
@@ -77,6 +77,37 @@ router.put("/user/:userId", verifyToken, async (req, res, next) => {
     }
 })
 
+router.put("/user/:userId/warn", verifyToken, verifyAdmin, async (req, res, next) => {
+    try {
+        const { userId } = req.params
+
+        if (req.payload._id === userId) {
+            res.status(400).json({ errorMessage: "You cannot warn your own admin account" })
+            return
+        }
+
+        const warnedUser = await User
+            .findByIdAndUpdate(
+                userId,
+                {
+                    $inc: { warnings: 1 },
+                    $set: { warnedAt: new Date() }
+                },
+                { new: true, runValidators: true }
+            )
+            .select("-password")
+
+        if (!warnedUser) {
+            res.status(404).json({ errorMessage: "User not found" })
+            return
+        }
+
+        res.status(200).json(warnedUser)
+    } catch (error) {
+        next(error)
+    }
+})
+
 router.delete("/user/:userId", verifyToken, async (req, res, next) => {
     try {
         const { userId } = req.params
@@ -89,23 +120,38 @@ router.delete("/user/:userId", verifyToken, async (req, res, next) => {
             return
         }
 
-        const deletedUser = await User.findByIdAndDelete(userId).select("-password")
+        if (isAdmin && isOwner) {
+            res.status(400).json({ errorMessage: "You cannot ban your own admin account" })
+            return
+        }
 
-        if (!deletedUser) {
+        const userToDelete = await User.findById(userId).select("-password")
+
+        if (!userToDelete) {
             res.status(404).json({ errorMessage: "User not found" })
             return
         }
 
+        const userIncidents = await Incident.find({ createdBy: userId }).select("comments")
+        const incidentCommentIds = userIncidents.flatMap((incident) => incident.comments)
         const userComments = await Comment.find({ user: userId }).select("_id")
         const userCommentIds = userComments.map((comment) => comment._id)
+        const commentIdsToDelete = [...incidentCommentIds, ...userCommentIds]
 
+        await Comment.deleteMany({ _id: { $in: commentIdsToDelete } })
+        await Incident.deleteMany({ createdBy: userId })
         await Incident.updateMany(
-            { comments: { $in: userCommentIds } },
-            { $pull: { comments: { $in: userCommentIds } } }
+            { comments: { $in: commentIdsToDelete } },
+            { $pull: { comments: { $in: commentIdsToDelete } } }
         )
-        await Comment.deleteMany({ user: userId })
 
-        res.status(200).json({ message: "User deleted" })
+        await User.findByIdAndDelete(userId)
+
+        res.status(200).json({
+            deletedComments: commentIdsToDelete.length,
+            deletedIncidents: userIncidents.length,
+            message: "User deleted"
+        })
     } catch (error) {
         next(error)
     }

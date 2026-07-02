@@ -102,8 +102,8 @@ router.put("/incident/:incidentId", verifyToken, async (req, res, next) => {
       return;
     }
 
-    const isOwner = foundIncident.createdBy.toString() === req.payload._id;
     const isAdmin = req.payload.role === "admin";
+    const isOwner = foundIncident.createdBy?.toString() === req.payload._id;
 
     if (!isOwner && !isAdmin) {
       res.status(403).json({ errorMessage: "You cannot edit this incident" });
@@ -152,10 +152,11 @@ router.delete("/incident/:incidentId", verifyToken, async (req, res, next) => {
       return;
     }
 
-    const isOwner = foundIncident.createdBy.toString() === req.payload._id;
+    const hasOwner = Boolean(foundIncident.createdBy);
     const isAdmin = req.payload.role === "admin";
+    const isOwner = foundIncident.createdBy?.toString() === req.payload._id;
 
-    if (!isOwner && !isAdmin) {
+    if (hasOwner && !isOwner && !isAdmin) {
       res.status(403).json({ errorMessage: "You cannot delete this incident" });
       return;
     }

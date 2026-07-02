@@ -21,7 +21,13 @@ const userSchema = new Schema(
       type: String,
       enum: ["user", "admin"],
       default: "user"
-    }
+    },
+    warnings: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    warnedAt: Date
   },
   {
     // this second object adds extra properties: `createdAt` and `updatedAt`    

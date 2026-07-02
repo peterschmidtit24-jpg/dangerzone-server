@@ -1,5 +1,71 @@
 const router = require("express").Router()
 const geocodeCache = new Map()
+const berlinCenter = {
+  lat: 52.52,
+  lng: 13.405,
+}
+
+function getDistanceScore(result) {
+  const lat = Number.parseFloat(result?.lat)
+  const lng = Number.parseFloat(result?.lon)
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return Number.POSITIVE_INFINITY
+  }
+
+  return Math.abs(lat - berlinCenter.lat) + Math.abs(lng - berlinCenter.lng)
+}
+
+function sortResultsByBerlinCenter(results) {
+  return [...results].sort((firstResult, secondResult) => (
+    getDistanceScore(firstResult) - getDistanceScore(secondResult)
+  ))
+}
+
+function normalizeStreetText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replaceAll("ß", "ss")
+    .replaceAll("ä", "ae")
+    .replaceAll("ö", "oe")
+    .replaceAll("ü", "ue")
+    .replace(/\bstrase\b/g, "strasse")
+    .replace(/([a-z]+)trasse\b/g, "$1strasse")
+    .replace(/([a-z]+)str\b/g, "$1strasse")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function getRequestedStreetStem(query) {
+  const addressPart = normalizeStreetText(query.split(",")[0])
+  const withoutHouseNumber = addressPart
+    .replace(/\b\d+[a-z]?\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  return withoutHouseNumber
+    .replace(/\bstrasse\b/g, "")
+    .replace(/\bstreet\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function resultMatchesRequestedStreet(result, query) {
+  const requestedStreetStem = getRequestedStreetStem(query)
+
+  if (requestedStreetStem.length < 4) {
+    return true
+  }
+
+  const normalizedDisplayName = normalizeStreetText(result?.display_name)
+  return normalizedDisplayName.includes(requestedStreetStem)
+}
+
+function filterResultsByRequestedStreet(results, query) {
+  const matchingResults = results.filter((result) => resultMatchesRequestedStreet(result, query))
+  return matchingResults.length ? matchingResults : []
+}
 
 function normalizePhotonFeature(feature) {
   const coordinates = feature?.geometry?.coordinates
@@ -30,7 +96,7 @@ function normalizePhotonFeature(feature) {
 
 async function searchNominatim(query) {
   const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`,
+    `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=${encodeURIComponent(query)}`,
     {
       headers: {
         "User-Agent": "dangerzone-local-dev/1.0",
@@ -42,12 +108,13 @@ async function searchNominatim(query) {
     return null
   }
 
-  return response.json()
+  const results = await response.json()
+  return filterResultsByRequestedStreet(sortResultsByBerlinCenter(results), query)
 }
 
 async function searchPhoton(query) {
   const response = await fetch(
-    `https://photon.komoot.io/api/?limit=1&lang=de&q=${encodeURIComponent(query)}`,
+    `https://photon.komoot.io/api/?limit=5&lang=de&q=${encodeURIComponent(query)}`,
     {
       headers: {
         "User-Agent": "dangerzone-local-dev/1.0",
@@ -60,9 +127,12 @@ async function searchPhoton(query) {
   }
 
   const data = await response.json()
-  const normalizedFeature = normalizePhotonFeature(data.features?.[0])
+  const normalizedFeatures = data.features
+    ?.map(normalizePhotonFeature)
+    .filter(Boolean) || []
+  const matchingFeatures = filterResultsByRequestedStreet(normalizedFeatures, query)
 
-  return normalizedFeature ? [normalizedFeature] : []
+  return matchingFeatures.length ? sortResultsByBerlinCenter(matchingFeatures) : []
 }
 
 router.get("/geocode", async (req, res, next) => {
